@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "637657171531",
+    "project_id": "solideremisr",
+    "storage_bucket": "solideremisr.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:637657171531:android:79ef8eacabd6138455afce",
+        "android_client_info": {
+          "package_name": "com.example.solidere_misr"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDsuADlIhWXTrAm7HUC1SDLUpLUwFnrh4I"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

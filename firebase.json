@@ -1,0 +1,39 @@
+{
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "solideremisr",
+          "appId": "1:637657171531:android:79ef8eacabd6138455afce",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "solideremisr",
+          "configurations": {
+            "android": "1:637657171531:android:79ef8eacabd6138455afce",
+            "ios": "1:637657171531:ios:9e8d92b36a4a05ac55afce",
+            "macos": "1:637657171531:ios:9e8d92b36a4a05ac55afce",
+            "web": "1:637657171531:web:33455726333fd50855afce",
+            "windows": "1:637657171531:web:29917e53001f5dc055afce"
+          }
+        }
+      }
+    }
+  },
+  "hosting": {
+    "public": "build/web",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ],
+    "rewrites": [
+      {
+        "source": "**",
+        "destination": "/index.html"
+      }
+    ]
+  }
+}
