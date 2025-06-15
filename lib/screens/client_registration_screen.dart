@@ -54,6 +54,24 @@ class _ClientRegistrationScreenState extends State<ClientRegistrationScreen> {
     }
   }
 
+  Future<void> _confirmAndSubmit() async {
+    final shouldSubmit = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: Text('تأكيد التسجيل'),
+        content: Text('هل أنت متأكد من تسجيل البيانات؟'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: Text('إلغاء')),
+          ElevatedButton(onPressed: () => Navigator.pop(context, true), child: Text('تأكيد')),
+        ],
+      ),
+    );
+
+    if (shouldSubmit == true) {
+      _submitForm();
+    }
+  }
+
   Future<void> _submitForm() async {
     if (_pickedImage == null) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('من فضلك اختر صورة العميل')));
@@ -62,6 +80,11 @@ class _ClientRegistrationScreenState extends State<ClientRegistrationScreen> {
 
     if (!_formKey.currentState!.validate()) return;
 
+    if (experienceType == null) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('من فضلك اختر نوع الخبرة')));
+      return;
+    }
+
     final prefs = await SharedPreferences.getInstance();
     final nationalId = nationalIdController.text.trim();
 
@@ -69,9 +92,7 @@ class _ClientRegistrationScreenState extends State<ClientRegistrationScreen> {
     bool alreadyExists = existingClients.any((entry) => entry.contains('الرقم القومي:$nationalId'));
 
     if (alreadyExists) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('تم التسجيل مسبقًا بهذا الرقم القومي')),
-      );
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('تم التسجيل مسبقًا بهذا الرقم القومي')));
       return;
     }
 
@@ -116,10 +137,12 @@ class _ClientRegistrationScreenState extends State<ClientRegistrationScreen> {
 
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('تم التسجيل بنجاح')));
 
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (_) => ClientProfileScreen(nationalId: nationalId)),
-    );
+    Future.delayed(Duration(seconds: 1), () {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => ClientProfileScreen(nationalId: nationalId)),
+      );
+    });
   }
 
   @override
@@ -150,16 +173,16 @@ class _ClientRegistrationScreenState extends State<ClientRegistrationScreen> {
                 ),
               ),
               const SizedBox(height: 20),
-              buildTextField('الاسم', nameController),
+              buildTextField('الاسم', nameController, isTextOnly: true),
               buildDateField('تاريخ الميلاد', birthDateController),
-              buildNationalIdField(),
+              buildNumberField('الرقم القومي', nationalIdController, length: 14),
               buildNumberField('رقم الموبايل', mobileNumberController),
-              buildNumberField('رقم موبايل احتياطي', altMobileNumberController, isOptional: true),
+              buildNumberField('رقم موبايل احتياطي', altMobileNumberController, optional: true),
               buildTextField('العنوان', addressController),
               buildNumberField('رقم الجواز', passportNumberController),
               buildDateField('تاريخ الإصدار', passportIssueDateController),
               buildDateField('تاريخ الانتهاء', passportExpiryDateController),
-              buildNumberField('مكان الإصدار (رقم)', passportIssuePlaceController, maxLength: 3),
+              buildNumberField('مكان الإصدار (رقم)', passportIssuePlaceController, length: 3),
               const SizedBox(height: 10),
               DropdownButtonFormField<String>(
                 decoration: InputDecoration(
@@ -178,16 +201,20 @@ class _ClientRegistrationScreenState extends State<ClientRegistrationScreen> {
               ),
               if (experienceType == 'قديم')
                 buildTextField('الشركات السابقة', previousCompaniesController),
-              buildTextField('اسم المندوب', delegateNameController),
+              buildTextField('اسم المندوب', delegateNameController, isTextOnly: true),
               const SizedBox(height: 24),
-              ElevatedButton(
-                onPressed: _submitForm,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.teal[700],
-                  foregroundColor: Colors.white,
-                  padding: EdgeInsets.symmetric(vertical: 14),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: _confirmAndSubmit,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.teal[700],
+                    foregroundColor: Colors.white,
+                    padding: EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  ),
+                  child: Text('تسجيل', style: TextStyle(fontSize: 18)),
                 ),
-                child: Text('تسجيل', style: TextStyle(fontSize: 18)),
               ),
             ],
           ),
@@ -196,20 +223,24 @@ class _ClientRegistrationScreenState extends State<ClientRegistrationScreen> {
     );
   }
 
-  Widget buildTextField(String label, TextEditingController controller) {
+  Widget buildTextField(String label, TextEditingController controller, {bool isTextOnly = false}) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 14),
       child: TextFormField(
         controller: controller,
         decoration: buildInputDecoration(label),
         style: TextStyle(color: Colors.white),
-        keyboardType: TextInputType.text,
+        keyboardType: TextInputType.name,
+        inputFormatters: isTextOnly
+            ? [FilteringTextInputFormatter.allow(RegExp(r'[ا-يأءئa-zA-Z\s]'))]
+            : [],
         validator: (value) => value == null || value.isEmpty ? 'مطلوب' : null,
       ),
     );
   }
 
-  Widget buildNumberField(String label, TextEditingController controller, {bool isOptional = false, int? maxLength}) {
+  Widget buildNumberField(String label, TextEditingController controller,
+      {bool optional = false, int? length}) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 14),
       child: TextFormField(
@@ -219,32 +250,11 @@ class _ClientRegistrationScreenState extends State<ClientRegistrationScreen> {
         keyboardType: TextInputType.number,
         inputFormatters: [
           FilteringTextInputFormatter.digitsOnly,
-          if (maxLength != null) LengthLimitingTextInputFormatter(maxLength),
+          if (length != null) LengthLimitingTextInputFormatter(length),
         ],
         validator: (value) {
-          if (isOptional) return null;
+          if (optional) return null;
           return value == null || value.isEmpty ? 'مطلوب' : null;
-        },
-      ),
-    );
-  }
-
-  Widget buildNationalIdField() {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 14),
-      child: TextFormField(
-        controller: nationalIdController,
-        decoration: buildInputDecoration('الرقم القومي'),
-        style: TextStyle(color: Colors.white),
-        keyboardType: TextInputType.number,
-        inputFormatters: [
-          FilteringTextInputFormatter.digitsOnly,
-          LengthLimitingTextInputFormatter(14),
-        ],
-        validator: (value) {
-          if (value == null || value.isEmpty) return 'مطلوب';
-          if (value.length != 14) return 'الرقم القومي يجب أن يكون 14 رقمًا';
-          return null;
         },
       ),
     );
